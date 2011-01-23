@@ -1,0 +1,14 @@
+apply plugin: 'java'
+apply plugin: 'idea'
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	compile 'org.testng:testng:5.14.6'
+}
+
+test {
+	useTestNG()
+}
