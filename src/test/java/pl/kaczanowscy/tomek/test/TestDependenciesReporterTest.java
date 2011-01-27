@@ -37,7 +37,8 @@ public class TestDependenciesReporterTest {
     }
 
     public void testOneTestClass() throws FileNotFoundException {
-        testNG.setTestClasses(new Class[] {TestA.class});
+        // FIXME separate test cases for B and C
+        testNG.setTestClasses(new Class[] {TestA.class, TestB.class, TestC.class});
         testNG.run();
 
         String text = readDotFile();

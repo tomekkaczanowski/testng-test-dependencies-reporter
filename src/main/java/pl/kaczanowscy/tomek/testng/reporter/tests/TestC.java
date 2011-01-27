@@ -9,12 +9,11 @@ public class TestC {
         assert true;
     }
 
-    @Test(dependsOnMethods = "test_C_1", dependsOnGroups = "group_B")
+    @Test(dependsOnMethods = "test_C_1")
     public void test_C_2() {
         assert true;
     }
 
-    @Test(dependsOnGroups = "group_A")
     public void test_C_3() {
         assert true;
     }
