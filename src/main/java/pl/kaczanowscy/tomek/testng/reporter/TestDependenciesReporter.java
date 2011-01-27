@@ -104,6 +104,8 @@ public class TestDependenciesReporter implements org.testng.IReporter {
 
         }
 
+    // TODO different colour/shapes for groups
+    // TODO different colours/shapes for skipped/failed tests
     private File generateDotFile(List<ISuite> suites) {
         File dotFile = new File(DEFAULT_OUTPUT_DIR + "/dotFile.dot");
         Writer out = null;
