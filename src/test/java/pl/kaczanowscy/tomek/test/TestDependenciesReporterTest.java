@@ -25,6 +25,8 @@ public class TestDependenciesReporterTest {
     @BeforeMethod
     public void setUp() {
         testNG = new TestNG();
+        // TODO remember you can also addListener not a Class
+        //testNG.addListener(new TestDependenciesReporter());
         testNG.setListenerClasses(Arrays.asList(new Class[]{TestDependenciesReporter.class}));
         testNG.setOutputDirectory(TestDependenciesReporter.DEFAULT_OUTPUT_DIR);
     }

@@ -1,6 +1,5 @@
 package pl.kaczanowscy.tomek.testng.reporter;
 
-import org.testng.IReporter;
 import org.testng.ISuite;
 import org.testng.ITestNGMethod;
 import org.testng.xml.XmlClass;
@@ -9,7 +8,6 @@ import org.testng.xml.XmlSuite;
 import org.testng.xml.XmlTest;
 
 import java.io.*;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -37,12 +35,19 @@ public class TestDependenciesReporter implements org.testng.IReporter {
                     //out.write("entry: " + entry.getKey() + NEWLINE);
                     for (ITestNGMethod method :  entry.getValue()) {
                         //out.write("\tmethod: " + method.getMethodName() + NEWLINE);
+                        //out.write(method.getMethodName() + " groups: " + Arrays.deepToString(method.getGroups()) + NEWLINE);
+                        //out.write(method.getMethodName() + " dep groups: " + Arrays.deepToString(method.getGroupsDependedUpon()) + NEWLINE);
                         for (String dependedUponMethod : method.getMethodsDependedUpon()) {
                             out.write(method.getMethodName() + DEPENDS_UPON + dependedUponMethod.substring(dependedUponMethod.lastIndexOf(".")+1) + NEWLINE);
                             //out.write("dep upon method: " + dependedUponMethod + NEWLINE);
                             //String[] tokens = dependedUponMethod.split("\\.");
                             //out.write(Arrays.deepToString(tokens));
                             //out.write(method.getMethodName() + DEPENDS_UPON + tokens[tokens.length-2] + "." + tokens[tokens.length-1]);
+
+                        }
+                        for (String dependedUponGroup : method.getGroupsDependedUpon()) {
+                            out.write(method.getMethodName() + DEPENDS_UPON + dependedUponGroup + NEWLINE);
+                            //out.write("dep upon group: " + dependedUponGroup + NEWLINE);
                         }
                     }
                 }
