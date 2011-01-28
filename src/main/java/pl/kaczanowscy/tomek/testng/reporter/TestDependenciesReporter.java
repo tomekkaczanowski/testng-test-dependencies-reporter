@@ -1,6 +1,7 @@
 package pl.kaczanowscy.tomek.testng.reporter;
 
 import org.testng.ISuite;
+import org.testng.ISuiteResult;
 import org.testng.ITestNGMethod;
 import org.testng.xml.XmlClass;
 import org.testng.xml.XmlInclude;
@@ -22,11 +23,14 @@ public class TestDependenciesReporter implements org.testng.IReporter {
 
         private final String name;
 
+        private final String state;
+
         private final Set<String> methodsDepUpon = new HashSet<String>();
         private final Set<String> groupsDepUpon = new HashSet<String>();
 
-        public TestMethod(String name) {
+        public TestMethod(String name, String state) {
             this.name = name;
+            this.state = state;
         }
 
         public String getName() {
@@ -38,7 +42,7 @@ public class TestDependenciesReporter implements org.testng.IReporter {
         }
 
         public boolean addGroup(String group) {
-            return methodsDepUpon.add(group);
+            return groupsDepUpon.add(group);
         }
 
         public Set<String> getMethodsDepUpon() {
@@ -68,15 +72,24 @@ public class TestDependenciesReporter implements org.testng.IReporter {
     }
 
     Set<TestMethod> methods = new HashSet<TestMethod>();
+    Collection<ITestNGMethod> failedMethods;
+    Collection<ITestNGMethod> skippedMethods;
 
     public void generateReport(java.util.List<XmlSuite> xmlSuites, java.util.List<ISuite> suites, java.lang.String outputDirectory) {
 
             for (ISuite suite : suites) {
                 //log("isuite: " + suite.getName());
+
+                for (Map.Entry<String, ISuiteResult> entry : suite.getResults().entrySet()) {
+                    failedMethods = entry.getValue().getTestContext().getFailedTests().getAllMethods();
+                    skippedMethods = entry.getValue().getTestContext().getSkippedTests().getAllMethods();
+                }
+
                 for (Map.Entry<String,Collection<ITestNGMethod>> entry : suite.getMethodsByGroups().entrySet()) {
+
                     //log("entry: " + entry.getKey());
                     for (ITestNGMethod method :  entry.getValue()) {
-                        TestMethod tempMet = new TestMethod(method.getMethodName());
+                        TestMethod tempMet = new TestMethod(method.getMethodName(), "");
                         methods.add(tempMet);
                         //log("method: " + method.getMethodName());
                         //log(method.getMethodName() + " groups: " + Arrays.deepToString(method.getGroups()));
@@ -113,6 +126,15 @@ public class TestDependenciesReporter implements org.testng.IReporter {
             out = new OutputStreamWriter(new FileOutputStream(dotFile));
             out.write("digraph testDependencies {"  + NEWLINE);
             out.write("  rankdir=BT;" + NEWLINE);
+
+            for (ITestNGMethod failedMethod : failedMethods) {
+                out.write(failedMethod.getMethodName() + " [color=red,style=filled];" + NEWLINE);
+            }
+            for (ITestNGMethod skippedMethod : skippedMethods) {
+                out.write(skippedMethod.getMethodName() + " [color=yellow,style=filled];" + NEWLINE);
+            }
+
+            Set<String> uniqueGroups = new HashSet<String>();
             for (TestMethod method : methods) {
                 for (String dependedUponMethod : method.getMethodsDepUpon()) {
                     out.write(method.getName() + DEPENDS_UPON + dependedUponMethod + NEWLINE);
@@ -120,6 +142,10 @@ public class TestDependenciesReporter implements org.testng.IReporter {
                 for (String dependedUponGroup : method.getGroupsDepUpon()) {
                     out.write(method.getName() + DEPENDS_UPON + dependedUponGroup + NEWLINE);
                 }
+                uniqueGroups.addAll(method.getGroupsDepUpon());
+            }
+            for (String group : uniqueGroups) {
+                out.write(group + " [shape=box,peripheries=2];" + NEWLINE);
             }
 /*            for (ISuite suite : suites) {
                 //System.out.println("isuite: " + suite.getName());

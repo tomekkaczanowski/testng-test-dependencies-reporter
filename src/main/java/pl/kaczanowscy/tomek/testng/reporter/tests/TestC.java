@@ -11,7 +11,7 @@ public class TestC {
 
     @Test(dependsOnMethods = "test_C_1")
     public void test_C_2() {
-        assert true;
+        assert false;
     }
 
     public void test_C_3() {
