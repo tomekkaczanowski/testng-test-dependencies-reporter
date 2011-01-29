@@ -74,48 +74,73 @@ public class TestDependenciesReporter implements org.testng.IReporter {
     Set<TestMethod> methods = new HashSet<TestMethod>();
     Collection<ITestNGMethod> failedMethods;
     Collection<ITestNGMethod> skippedMethods;
+    Collection<String> failedGroups = new HashSet<String>();
+
+    // FIXME to be removed? there is no such thing as skipped group
+    Collection<String> skippedGroups = new HashSet<String>();
+
+    Set<String> uniqueGroups = new HashSet<String>();
 
     public void generateReport(java.util.List<XmlSuite> xmlSuites, java.util.List<ISuite> suites, java.lang.String outputDirectory) {
 
-            for (ISuite suite : suites) {
-                //log("isuite: " + suite.getName());
+        for (ISuite suite : suites) {
+            //log("isuite: " + suite.getName());
 
-                for (Map.Entry<String, ISuiteResult> entry : suite.getResults().entrySet()) {
-                    failedMethods = entry.getValue().getTestContext().getFailedTests().getAllMethods();
-                    skippedMethods = entry.getValue().getTestContext().getSkippedTests().getAllMethods();
-                }
+            // FIXME will not work for more than one suite
+            for (Map.Entry<String, ISuiteResult> entry : suite.getResults().entrySet()) {
+                failedMethods = entry.getValue().getTestContext().getFailedTests().getAllMethods();
+                skippedMethods = entry.getValue().getTestContext().getSkippedTests().getAllMethods();
+            }
 
-                for (Map.Entry<String,Collection<ITestNGMethod>> entry : suite.getMethodsByGroups().entrySet()) {
+            // the only way to learn about which groups failed is by checking groups that failed methods belong to
+            for (ITestNGMethod method : failedMethods) {
+                failedGroups.addAll(Arrays.asList(method.getGroups()));
+            }
 
-                    //log("entry: " + entry.getKey());
-                    for (ITestNGMethod method :  entry.getValue()) {
-                        TestMethod tempMet = new TestMethod(method.getMethodName(), "");
-                        methods.add(tempMet);
-                        //log("method: " + method.getMethodName());
-                        //log(method.getMethodName() + " groups: " + Arrays.deepToString(method.getGroups()));
-                        //log(method.getMethodName() + " dep groups: " + Arrays.deepToString(method.getGroupsDependedUpon()));
-                        for (String dependedUponMethod : method.getMethodsDependedUpon()) {
-                            tempMet.addMethod(dependedUponMethod.substring(dependedUponMethod.lastIndexOf(".")+1));
-                            //log(method.getMethodName() + DEPENDS_UPON + dependedUponMethod.substring(dependedUponMethod.lastIndexOf(".")+1));
-                            //log("dep upon method: " + dependedUponMethod);
-                            //String[] tokens = dependedUponMethod.split("\\.");
-                            //log(Arrays.deepToString(tokens));
-                            //log(method.getMethodName() + DEPENDS_UPON + tokens[tokens.length-2] + "." + tokens[tokens.length-1]);
 
-                        }
-                        for (String dependedUponGroup : method.getGroupsDependedUpon()) {
-                            tempMet.addGroup(dependedUponGroup);
-                            //log(method.getMethodName() + DEPENDS_UPON + dependedUponGroup);
-                            //log("dep upon group: " + dependedUponGroup);
-                        }
+            // FIXME to be removed? there is no such thing as skipped group
+            for (ITestNGMethod method : skippedMethods) {
+                skippedGroups.addAll(Arrays.asList(method.getGroups()));
+            }
+
+            skippedGroups.removeAll(failedGroups);
+
+            for (Map.Entry<String,Collection<ITestNGMethod>> entry : suite.getMethodsByGroups().entrySet()) {
+
+                //log("entry: " + entry.getKey());
+                for (ITestNGMethod method :  entry.getValue()) {
+                    TestMethod tempMet = new TestMethod(method.getMethodName(), "");
+                    methods.add(tempMet);
+                    //log("method: " + method.getMethodName());
+                    //log(method.getMethodName() + " groups: " + Arrays.deepToString(method.getGroups()));
+                    //log(method.getMethodName() + " dep groups: " + Arrays.deepToString(method.getGroupsDependedUpon()));
+                    for (String dependedUponMethod : method.getMethodsDependedUpon()) {
+                        tempMet.addMethod(dependedUponMethod.substring(dependedUponMethod.lastIndexOf(".")+1));
+                        //log(method.getMethodName() + DEPENDS_UPON + dependedUponMethod.substring(dependedUponMethod.lastIndexOf(".")+1));
+                        //log("dep upon method: " + dependedUponMethod);
+                        //String[] tokens = dependedUponMethod.split("\\.");
+                        //log(Arrays.deepToString(tokens));
+                        //log(method.getMethodName() + DEPENDS_UPON + tokens[tokens.length-2] + "." + tokens[tokens.length-1]);
+
+                    }
+                    for (String dependedUponGroup : method.getGroupsDependedUpon()) {
+                        tempMet.addGroup(dependedUponGroup);
+                        //log(method.getMethodName() + DEPENDS_UPON + dependedUponGroup);
+                        //log("dep upon group: " + dependedUponGroup);
                     }
                 }
             }
+        }
+
+
+        for (TestMethod method : methods) {
+            uniqueGroups.addAll(method.getGroupsDepUpon());
+        }
 
         File dotFile = generateDotFile(suites);
         generateDiagram(dotFile);
 
-        }
+    }
 
     // TODO different colour/shapes for groups
     // TODO different colours/shapes for skipped/failed tests
@@ -127,27 +152,54 @@ public class TestDependenciesReporter implements org.testng.IReporter {
             out.write("digraph testDependencies {"  + NEWLINE);
             out.write("  rankdir=BT;" + NEWLINE);
 
+            // all nodes of failed methods are red
             for (ITestNGMethod failedMethod : failedMethods) {
                 out.write(failedMethod.getMethodName() + " [color=red,style=filled];" + NEWLINE);
             }
+            // all nodes of skipped methods are yellow
             for (ITestNGMethod skippedMethod : skippedMethods) {
                 out.write(skippedMethod.getMethodName() + " [color=yellow,style=filled];" + NEWLINE);
             }
 
-            Set<String> uniqueGroups = new HashSet<String>();
+            // let us gather all groups that are
             for (TestMethod method : methods) {
+
+                // draw dependency edges: method to method
                 for (String dependedUponMethod : method.getMethodsDepUpon()) {
                     out.write(method.getName() + DEPENDS_UPON + dependedUponMethod + NEWLINE);
                 }
+
+                // draw dependency edges: method to group
                 for (String dependedUponGroup : method.getGroupsDepUpon()) {
                     out.write(method.getName() + DEPENDS_UPON + dependedUponGroup + NEWLINE);
                 }
-                uniqueGroups.addAll(method.getGroupsDepUpon());
             }
+
+            // draw group nodes
             for (String group : uniqueGroups) {
-                out.write(group + " [shape=box,peripheries=2];" + NEWLINE);
+                // failed - red
+                if (failedGroups.contains(group)) {
+                    out.write(group + " [shape=box,peripheries=2,color=red,style=filled];" + NEWLINE);
+                }
+                // skipped - yello
+                // FIXME to be removed? there is no such thing as skipped group
+                else if (skippedGroups.contains(group)) {
+                    out.write(group + " [shape=box,peripheries=2,color=yellow,style=filled];" + NEWLINE);
+                }
+                // normal groups
+                else {
+                    out.write(group + " [shape=box,peripheries=2];" + NEWLINE);
+                }
             }
+
+            // all groups on the same level
+            out.write("{ rank = same;");
+            for (String group : uniqueGroups) {
+                out.write(" \"" + group + "\"; ");
+            }
+            out.write("}" + NEWLINE);
 /*            for (ISuite suite : suites) {
+
                 //System.out.println("isuite: " + suite.getName());
                 // out.write("isuite: " + suite.getName()  + NEWLINE);
                 for (Map.Entry<String,Collection<ITestNGMethod>> entry : suite.getMethodsByGroups().entrySet()) {
@@ -171,7 +223,7 @@ public class TestDependenciesReporter implements org.testng.IReporter {
                     }
                 }
             }*/
-            out.write("}");
+            out.write("}" + NEWLINE);
 
             // FIXME exception handling
         } catch (FileNotFoundException e) {
