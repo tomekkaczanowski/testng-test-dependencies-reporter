@@ -1,4 +1,7 @@
-Implementation of a fancy TestNG reporter (IReporter) which visualizes test dependencies as a diagram (Dot / Graphviz). See this thread: http://groups.google.com/group/testng-dev/browse_thread/thread/48429064a526e809
+Implementation of a fancy TestNG reporter (IReporter) which visualizes test dependencies as a diagram (Dot / Graphviz). For more information
+
+* read this blog post: http://is.gd/mFIh3J
+* and this mailing list discussion http://is.gd/SuDQW7
 
 run
   gradle test
@@ -13,7 +16,8 @@ and if graphviz is on classpath, you will also find generated graph there:
 Work in progress !
 
 TODO
+  * be able to generate dependencies graph without running tests (but of cours no failed/skipped info then!)
   * better layout of groups and methods
-  * show why group failed
+  * show why group failed (which methods went red within this group)
   * add configuration (report.properties on classpath?)
   * various detail levels (e.g. only test methods depended-upon/depending, all methods etc.)
