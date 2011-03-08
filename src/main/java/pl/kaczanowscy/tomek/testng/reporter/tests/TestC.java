@@ -17,4 +17,16 @@ public class TestC {
     public void test_C_3() {
         assert true;
     }
+
+    public void test_C_4() {
+        assert true;
+    }
+
+    public void test_C_5() {
+        assert true;
+    }
+
+    public void test_C_6() {
+        assert true;
+    }
 }

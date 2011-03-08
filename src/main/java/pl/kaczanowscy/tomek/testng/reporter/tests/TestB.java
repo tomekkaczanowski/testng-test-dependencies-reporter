@@ -19,4 +19,16 @@ public class TestB {
     public void test_B_3() {
         assert true;
     }
+
+    public void test_B_4() {
+        assert true;
+    }
+
+    public void test_B_5() {
+        assert true;
+    }
+
+    public void test_B_6() {
+        assert true;
+    }
 }

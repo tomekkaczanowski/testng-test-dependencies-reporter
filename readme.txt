@@ -21,3 +21,8 @@ TODO
   * show why group failed (which methods went red within this group)
   * add configuration (report.properties on classpath?)
   * various detail levels (e.g. only test methods depended-upon/depending, all methods etc.)
+
+
+
+org.testng.SkipException
+IAnnotationTransformer
