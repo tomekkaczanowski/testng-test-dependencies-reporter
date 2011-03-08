@@ -5,7 +5,7 @@ import org.testng.SkipException;
 import org.testng.TestListenerAdapter;
 
 /**
- * Skips all tests. Useful if all you want is to draw a diagram of test dependencies (without running tests, which takes time)..
+ * Skips all tests. Useful if all you want is to draw a diagram of test dependencies (without running tests, which takes time).
  */
 public class SkipTestsListener extends TestListenerAdapter {
 
@@ -16,7 +16,7 @@ public class SkipTestsListener extends TestListenerAdapter {
      */
     public void onTestStart(ITestResult testResult) {
         super.onTestStart(testResult);
-        throw new SkipException("Skipping Test: " +
+        throw new SkipException("Skipping test: " +
                 testResult.getMethod().getMethodName());
     }
 }
