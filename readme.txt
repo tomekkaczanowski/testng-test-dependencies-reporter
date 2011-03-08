@@ -7,10 +7,10 @@ run
   gradle test
 
 and you will find dot file in:
-  build/reports/test-dependencies/dotFile.dot
+  test-output/dotFile.dot
 
 and if graphviz is on classpath, you will also find generated graph there:
-  build/reports/test-dependencies/graph.png
+  test-output/graph.png
 
 
 Work in progress !

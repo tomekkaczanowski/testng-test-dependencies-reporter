@@ -11,8 +11,6 @@ import java.util.*;
 
 public class TestDependenciesReporter implements IReporter {
 
-    // FIXME should rather use outputDirectory injected by TestNG, see method parameters below
-    //public final static String DEFAULT_OUTPUT_DIR = "build/reports/test-dependencies";
     private static final String FILE_SEPARATOR = System.getProperty("file.separator");
 
     private DotFileGenerator dotGenerator;
