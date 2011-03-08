@@ -32,7 +32,7 @@ public class TestDependenciesReporterTest {
     public void setUp() {
         testNG = new TestNG();
         // TODO remember you can also addListener not a Class
-        testNG.setOutputDirectory(TestDependenciesReporter.DEFAULT_OUTPUT_DIR);
+        //testNG.setOutputDirectory(TestDependenciesReporter.DEFAULT_OUTPUT_DIR);
     }
 
     @AfterMethod
@@ -84,7 +84,7 @@ public class TestDependenciesReporterTest {
     }
 
     private String readDotFile() throws FileNotFoundException {
-        File dotFile = new File(TestDependenciesReporter.DEFAULT_OUTPUT_DIR + FILE_SEPARATOR + "dotFile.dot");
+        File dotFile = new File(testNG.getOutputDirectory() + FILE_SEPARATOR + "dotFile.dot");
         assertTrue(dotFile.exists());
 
         return readFile(dotFile);
@@ -115,7 +115,7 @@ public class TestDependenciesReporterTest {
     }
 
     private void removeOutputDir() {
-        File outputDir = new File(TestDependenciesReporter.DEFAULT_OUTPUT_DIR);
+        File outputDir = new File(testNG.getOutputDirectory());
         outputDir.delete();
     }
 

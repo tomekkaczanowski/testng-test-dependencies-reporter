@@ -12,7 +12,7 @@ import java.util.*;
 public class TestDependenciesReporter implements IReporter {
 
     // FIXME should rather use outputDirectory injected by TestNG, see method parameters below
-    public final static String DEFAULT_OUTPUT_DIR = "build/reports/test-dependencies";
+    //public final static String DEFAULT_OUTPUT_DIR = "build/reports/test-dependencies";
     private static final String FILE_SEPARATOR = System.getProperty("file.separator");
 
     private DotFileGenerator dotGenerator;
@@ -45,8 +45,8 @@ public class TestDependenciesReporter implements IReporter {
 
     public void generateReport(List<XmlSuite> xmlSuites, List<ISuite> suites, String outputDirectory) {
         analyzeTestDependencies(suites);
-        File dotFile = dotGenerator.generateDotFile();
-        diagramGenerator.generateDiagram(dotFile);
+        File dotFile = dotGenerator.generateDotFile(outputDirectory);
+        diagramGenerator.generateDiagram(outputDirectory, dotFile);
     }
 
     private void analyzeTestDependencies(List<ISuite> suites) {
@@ -113,7 +113,7 @@ public class TestDependenciesReporter implements IReporter {
     }
 
     public interface DotFileGenerator {
-        File generateDotFile();
+        File generateDotFile(String outputDirectory);
     }
 
     /**
@@ -155,8 +155,8 @@ public class TestDependenciesReporter implements IReporter {
         protected String cssGroup = " [shape=box,peripheries=2];";
 
 
-        public File generateDotFile() {
-            File dotFile = new File(DEFAULT_OUTPUT_DIR + FILE_SEPARATOR + "dotFile.dot");
+        public File generateDotFile(String outputDirectory) {
+            File dotFile = new File(outputDirectory + FILE_SEPARATOR + "dotFile.dot");
             Writer out = null;
             try {
                 out = new OutputStreamWriter(new FileOutputStream(dotFile));
@@ -258,7 +258,7 @@ public class TestDependenciesReporter implements IReporter {
     }
 
     public interface DiagramGenerator {
-        void generateDiagram(File dotFile);
+        void generateDiagram(String outputDirectory, File dotFile);
     }
 
     /**
@@ -266,10 +266,10 @@ public class TestDependenciesReporter implements IReporter {
      */
     class PngDiagramGenerator implements DiagramGenerator {
 
-        public void generateDiagram(File dotFile) {
+        public void generateDiagram(String outputDirectory, File dotFile) {
             try {
                 Runtime run = Runtime.getRuntime();
-                Process pr = run.exec("dot " + dotFile.getAbsolutePath() + " -Tpng -o" + DEFAULT_OUTPUT_DIR + FILE_SEPARATOR + "graph.png");
+                Process pr = run.exec("dot " + dotFile.getAbsolutePath() + " -Tpng -o" + outputDirectory + FILE_SEPARATOR + "graph.png");
                 pr.waitFor();
                 //BufferedReader buf = new BufferedReader(new InputStreamReader(pr.getInputStream()));
 
