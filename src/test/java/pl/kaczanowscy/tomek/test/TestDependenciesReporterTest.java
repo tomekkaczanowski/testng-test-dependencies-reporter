@@ -4,6 +4,7 @@ import org.testng.TestNG;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import pl.kaczanowscy.tomek.testng.listener.SkipTestsListener;
 import pl.kaczanowscy.tomek.testng.reporter.TestDependenciesReporter;
 import pl.kaczanowscy.tomek.testng.reporter.tests.TestA;
 import pl.kaczanowscy.tomek.testng.reporter.tests.TestB;
@@ -13,12 +14,17 @@ import java.io.*;
 import java.util.Arrays;
 import java.util.Scanner;
 
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
 @Test
 public class TestDependenciesReporterTest {
 
+    private static final String FILE_SEPARATOR = System.getProperty("file.separator");
+
     // TODO temp files instead?
+
+    // TODO drawing
 
     private TestNG testNG;
 
@@ -26,8 +32,6 @@ public class TestDependenciesReporterTest {
     public void setUp() {
         testNG = new TestNG();
         // TODO remember you can also addListener not a Class
-        //testNG.addListener(new TestDependenciesReporter());
-        testNG.setListenerClasses(Arrays.asList(new Class[]{TestDependenciesReporter.class}));
         testNG.setOutputDirectory(TestDependenciesReporter.DEFAULT_OUTPUT_DIR);
     }
 
@@ -36,8 +40,11 @@ public class TestDependenciesReporterTest {
         removeOutputDir();
     }
 
-    public void testOneTestClass() throws FileNotFoundException {
-        // FIXME separate test cases for B and C
+     public void testNoColors() throws FileNotFoundException {
+        TestDependenciesReporter reporter = new TestDependenciesReporter();
+        reporter.noColor();
+        testNG.setListenerClasses(Arrays.asList(new Class[] {SkipTestsListener.class}));
+        testNG.addListener(reporter);
         testNG.setTestClasses(new Class[] {TestA.class, TestB.class, TestC.class});
         testNG.run();
 
@@ -50,10 +57,34 @@ public class TestDependenciesReporterTest {
         assertTrue(text.contains("test_A_2 -> test_A_1"), text);
         assertTrue(text.contains("test_A_3 -> test_A_2"), text);
         assertTrue(text.contains("}"), text);
+        assertFalse(text.contains("red"), text);
+        assertFalse(text.contains("yellow"), text);
+    }
+
+    //@Test(enabled =  false)
+    public void testOneTestClass() throws FileNotFoundException {
+        testNG.setListenerClasses(Arrays.asList(new Class[]{TestDependenciesReporter.class}));
+        // FIXME separate test cases for B and C
+        testNG.setTestClasses(new Class[] {TestA.class, TestB.class, TestC.class});
+        testNG.run();
+
+        String text = readDotFile();
+        assertTrue(text.contains("digraph testDependencies {"), text);
+        assertTrue(text.contains("test_A_1"), text);
+        assertTrue(text.contains("test_A_2"), text);
+        assertTrue(text.contains("test_A_3"), text);
+
+        assertTrue(text.contains("test_A_2 -> test_A_1"), text);
+        assertTrue(text.contains("test_A_3 -> test_A_2"), text);
+        assertTrue(text.contains("test_C_6"), text);
+        assertTrue(text.contains("test_A_6"), text);
+        assertTrue(text.contains("}"), text);
+        assertTrue(text.contains("red"), text);
+        assertTrue(text.contains("yellow"), text);
     }
 
     private String readDotFile() throws FileNotFoundException {
-        File dotFile = new File(TestDependenciesReporter.DEFAULT_OUTPUT_DIR + "/dotFile.dot");
+        File dotFile = new File(TestDependenciesReporter.DEFAULT_OUTPUT_DIR + FILE_SEPARATOR + "dotFile.dot");
         assertTrue(dotFile.exists());
 
         return readFile(dotFile);

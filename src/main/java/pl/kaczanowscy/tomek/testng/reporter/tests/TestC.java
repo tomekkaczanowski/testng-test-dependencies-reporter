@@ -26,6 +26,7 @@ public class TestC {
         assert true;
     }
 
+    @Test(dependsOnMethods = "pl.kaczanowscy.tomek.testng.reporter.tests.TestA.test_A_6")
     public void test_C_6() {
         assert true;
     }
