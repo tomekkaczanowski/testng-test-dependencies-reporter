@@ -15,6 +15,9 @@ and if graphviz is on classpath, you will also find generated graph there:
 
 Work in progress !
 
+FIXME
+  * make it work properly when FQN is given, and not only method name
+
 TODO
   * be able to generate dependencies graph without running tests (but of cours no failed/skipped info then!)
     * done, but need it to be configurable (right now you can do it programmaticaly only)
