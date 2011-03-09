@@ -9,6 +9,7 @@ import pl.kaczanowscy.tomek.testng.reporter.TestDependenciesReporter;
 import pl.kaczanowscy.tomek.testng.reporter.tests.TestA;
 import pl.kaczanowscy.tomek.testng.reporter.tests.TestB;
 import pl.kaczanowscy.tomek.testng.reporter.tests.TestC;
+import pl.kaczanowscy.tomek.testng.reporter.tests.TestD;
 
 import java.io.*;
 import java.util.Arrays;
@@ -40,6 +41,7 @@ public class TestDependenciesReporterTest {
         removeOutputDir();
     }
 
+     //@Test(enabled =  false)
      public void testNoColors() throws FileNotFoundException {
         TestDependenciesReporter reporter = new TestDependenciesReporter();
         reporter.noColor();
@@ -81,6 +83,23 @@ public class TestDependenciesReporterTest {
         assertTrue(text.contains("}"), text);
         assertTrue(text.contains("red"), text);
         assertTrue(text.contains("yellow"), text);
+    }
+
+    public void testFailedBeforeMethod() throws FileNotFoundException {
+        testNG.setListenerClasses(Arrays.asList(new Class[]{TestDependenciesReporter.class}));
+
+        testNG.setTestClasses(new Class[] {TestD.class});
+        testNG.run();
+
+        String text = readDotFile();
+        assertTrue(text.contains("digraph testDependencies {"), text);
+        assertTrue(text.contains("test_D_1"), text);
+        assertTrue(text.contains("test_D_2"), text);
+
+        assertTrue(text.contains("Failed Configuration Methods"), text);
+        assertTrue(text.contains("TestD_failedBeforeClassMethod"), text);
+//        assertTrue(text.contains("test_D_2 -> failedBeforeClassMethod"), text);
+        assertTrue(text.contains("}"), text);
     }
 
     private String readDotFile() throws FileNotFoundException {

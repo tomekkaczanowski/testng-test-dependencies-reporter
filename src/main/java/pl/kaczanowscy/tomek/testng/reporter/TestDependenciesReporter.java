@@ -1,5 +1,6 @@
 package pl.kaczanowscy.tomek.testng.reporter;
 
+//import org.apache.log4j.Logger;
 import org.testng.IReporter;
 import org.testng.ISuite;
 import org.testng.ISuiteResult;
@@ -10,6 +11,8 @@ import java.io.*;
 import java.util.*;
 
 public class TestDependenciesReporter implements IReporter {
+
+    //Logger log = Logger.getLogger("blah");
 
     private static final String FILE_SEPARATOR = System.getProperty("file.separator");
 
@@ -32,7 +35,9 @@ public class TestDependenciesReporter implements IReporter {
     }
 
     Set<TestMethod> methods = new HashSet<TestMethod>();
+    //Set<ConfigurationMethod> configs = new HashSet<ConfigurationMethod>();
     Collection<ITestNGMethod> failedMethods;
+    Collection<ITestNGMethod> failedConfigurations;
     Collection<ITestNGMethod> skippedMethods;
     Collection<String> failedGroups = new HashSet<String>();
 
@@ -56,10 +61,13 @@ public class TestDependenciesReporter implements IReporter {
             if (!noColor) {
                 // FIXME will not work for more than one suite
                 for (Map.Entry<String, ISuiteResult> entry : suite.getResults().entrySet()) {
+                    failedConfigurations = entry.getValue().getTestContext().getFailedConfigurations().getAllMethods();
                     failedMethods = entry.getValue().getTestContext().getFailedTests().getAllMethods();
                     skippedMethods = entry.getValue().getTestContext().getSkippedTests().getAllMethods();
                 }
             } else {
+                // TODO what happens with configs and noColor - does it work?
+                failedConfigurations = new ArrayList<ITestNGMethod>();
                 failedMethods = new ArrayList<ITestNGMethod>();
                 skippedMethods = new ArrayList<ITestNGMethod>();
             }
@@ -79,7 +87,7 @@ public class TestDependenciesReporter implements IReporter {
 
             for (Map.Entry<String, Collection<ITestNGMethod>> entry : suite.getMethodsByGroups().entrySet()) {
 
-                //log("entry: " + entry.getKey());
+                log("entry: " + entry.getKey());
                 for (ITestNGMethod method : entry.getValue()) {
                     TestMethod tempMet = new TestMethod(method.getMethodName(), "");
                     methods.add(tempMet);
@@ -88,7 +96,7 @@ public class TestDependenciesReporter implements IReporter {
                     //log(method.getMethodName() + " dep groups: " + Arrays.deepToString(method.getGroupsDependedUpon()));
                     for (String dependedUponMethod : method.getMethodsDependedUpon()) {
                         tempMet.addMethod(dependedUponMethod.substring(dependedUponMethod.lastIndexOf(".") + 1));
-                        //log(method.getMethodName() + DEPENDS_UPON + dependedUponMethod.substring(dependedUponMethod.lastIndexOf(".")+1));
+                        log(method.getMethodName() + " depends upon " + dependedUponMethod.substring(dependedUponMethod.lastIndexOf(".")+1));
                         //log("dep upon method: " + dependedUponMethod);
                         //String[] tokens = dependedUponMethod.split("\\.");
                         //log(Arrays.deepToString(tokens));
@@ -104,8 +112,21 @@ public class TestDependenciesReporter implements IReporter {
             }
         }
 
-
+for (ITestNGMethod method : failedMethods) {
+            log("failed method: " + method.getMethodName());
+    for (String depMethod : method.getMethodsDependedUpon()) {
+        log("  dep on: " + depMethod);
+    }
+        }
+for (ITestNGMethod method : skippedMethods) {
+            log("skipped method: " + method.getMethodName());
+    for (String depMethod : method.getMethodsDependedUpon()) {
+        log("  dep on: " + depMethod);
+    }
+        }
+        
         for (TestMethod method : methods) {
+            log("method: " + method.getName());
             uniqueGroups.addAll(method.getGroupsDepUpon());
         }
     }
@@ -159,6 +180,22 @@ public class TestDependenciesReporter implements IReporter {
             try {
                 out = new OutputStreamWriter(new FileOutputStream(dotFile));
                 out.write("digraph testDependencies {" + NEWLINE);
+
+if (!failedConfigurations.isEmpty()) {
+    out.write("subgraph clusterFailedConfigs {" + NEWLINE);
+    out.write("label = \"Failed Configuration Methods\"" + NEWLINE);
+    // TODO extract CSS
+    // FIXME does not work - expected border around failedConfigs cluster
+    out.write("color=blue;" + NEWLINE);
+    //out.write("node [color=white];" + NEWLINE);
+    for (ITestNGMethod failedConfig : failedConfigurations) {
+        String className = failedConfig.getTestClass().getName();
+        className = className.substring(className.lastIndexOf("."));
+        out.write(className + "_" + failedConfig.getMethodName() + ";" + NEWLINE);
+    }
+    out.write("}" + NEWLINE);
+
+}
                 out.write("  rankdir=BT;" + NEWLINE);
 
                 for (ITestNGMethod failedMethod : failedMethods) {
@@ -202,9 +239,11 @@ public class TestDependenciesReporter implements IReporter {
                 }
 
                 // all groups on the same level
-                out.write("{ rank = same;");
-                for (String group : uniqueGroups) {
-                    out.write(" \"" + group + "\"; ");
+                if (!uniqueGroups.isEmpty()) {
+                    out.write("{ rank = same;");
+                    for (String group : uniqueGroups) {
+                        out.write(" \"" + group + "\"; ");
+                    }
                 }
                 out.write("}" + NEWLINE);
 /*            for (ISuite suite : suites) {
@@ -253,6 +292,8 @@ public class TestDependenciesReporter implements IReporter {
 
     private void log(String msg) {
         System.out.println(msg);
+        System.err.println(msg);
+        //log.warn(msg);
     }
 
     public interface DiagramGenerator {
