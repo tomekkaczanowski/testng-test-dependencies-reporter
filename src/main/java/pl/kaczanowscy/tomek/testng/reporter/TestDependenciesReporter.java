@@ -54,9 +54,9 @@ public class TestDependenciesReporter implements IReporter {
 
     private void analyzeTestDependencies(List<ISuite> suites) {
         for (ISuite suite : suites) {
-            //log("isuite: " + suite.getName());
+            log("isuite: " + suite.getName());
 
-            // FIXME why implication that noColor = all_tests_were?
+            // FIXME why implication that noColor = all_tests_were skipped?
             // in case of noColor all tests were probably skipped
             if (!noColor) {
                 // FIXME will not work for more than one suite
@@ -72,11 +72,34 @@ public class TestDependenciesReporter implements IReporter {
                 skippedMethods = new ArrayList<ITestNGMethod>();
             }
 
+            for (ITestNGMethod method : failedMethods) {
+            log("failed method: " + getClassAndMethodString(method));
+            for (String depMethod : method.getMethodsDependedUpon()) {
+                log("  dep on: " + depMethod);
+            }
+        }
+
+            for (ITestNGMethod method : failedConfigurations) {
+            log("failed config: " + getClassAndMethodString(method));
+            for (String depMethod : method.getMethodsDependedUpon()) {
+                log("  dep on: " + depMethod);
+            }
+        }
+        for (ITestNGMethod method : skippedMethods) {
+            log("skipped method: " + getClassAndMethodString(method));
+            for (String depMethod : method.getMethodsDependedUpon()) {
+                log("  dep on: " + depMethod);
+            }
+                for (String depGroup : method.getGroupsDependedUpon()) {
+                log("  dep on: " + depGroup);
+            }
+        }
+            
+            
             // the only way to learn about which groups failed is by checking groups that failed methods belong to
             for (ITestNGMethod method : failedMethods) {
                 failedGroups.addAll(Arrays.asList(method.getGroups()));
             }
-
 
             // FIXME to be removed? there is no such thing as skipped group
             for (ITestNGMethod method : skippedMethods) {
@@ -89,14 +112,15 @@ public class TestDependenciesReporter implements IReporter {
 
                 log("entry: " + entry.getKey());
                 for (ITestNGMethod method : entry.getValue()) {
-                    TestMethod tempMet = new TestMethod(method.getMethodName(), "");
+                    TestMethod tempMet = new TestMethod(method.getMethodName());
                     methods.add(tempMet);
-                    //log("method: " + method.getMethodName());
+                    //log("method: " + method.getMethodName() + " added to methods");
                     //log(method.getMethodName() + " groups: " + Arrays.deepToString(method.getGroups()));
                     //log(method.getMethodName() + " dep groups: " + Arrays.deepToString(method.getGroupsDependedUpon()));
                     for (String dependedUponMethod : method.getMethodsDependedUpon()) {
                         tempMet.addMethod(dependedUponMethod.substring(dependedUponMethod.lastIndexOf(".") + 1));
-                        log(method.getMethodName() + " depends upon " + dependedUponMethod.substring(dependedUponMethod.lastIndexOf(".")+1));
+                        //log("method: " + method.getMethodName() + " deps on " + dependedUponMethod.substring(dependedUponMethod.lastIndexOf(".") + 1) + " added to methods");
+                        //log(method.getMethodName() + " depends upon " + dependedUponMethod.substring(dependedUponMethod.lastIndexOf(".")+1));
                         //log("dep upon method: " + dependedUponMethod);
                         //String[] tokens = dependedUponMethod.split("\\.");
                         //log(Arrays.deepToString(tokens));
@@ -112,21 +136,30 @@ public class TestDependenciesReporter implements IReporter {
             }
         }
 
-for (ITestNGMethod method : failedMethods) {
-            log("failed method: " + method.getMethodName());
-    for (String depMethod : method.getMethodsDependedUpon()) {
-        log("  dep on: " + depMethod);
-    }
+        for (ITestNGMethod method : failedMethods) {
+            log("failed method: " + getClassAndMethodString(method));
+            for (String depMethod : method.getMethodsDependedUpon()) {
+                log("  dep on: " + depMethod);
+            }
         }
-for (ITestNGMethod method : skippedMethods) {
-            log("skipped method: " + method.getMethodName());
-    for (String depMethod : method.getMethodsDependedUpon()) {
-        log("  dep on: " + depMethod);
-    }
+
+            for (ITestNGMethod method : failedConfigurations) {
+            log("failed config: " + getClassAndMethodString(method));
+            for (String depMethod : method.getMethodsDependedUpon()) {
+                log("  dep on: " + depMethod);
+            }}
+        for (ITestNGMethod method : skippedMethods) {
+            log("skipped method: " + getClassAndMethodString(method));
+            for (String depMethod : method.getMethodsDependedUpon()) {
+                log("  dep on: " + depMethod);
+            }
+                for (String depGroup : method.getGroupsDependedUpon()) {
+                log("  dep on: " + depGroup);
+            }
         }
-        
+
         for (TestMethod method : methods) {
-            log("method: " + method.getName());
+            //log("method: " + method.getName());
             uniqueGroups.addAll(method.getGroupsDepUpon());
         }
     }
@@ -154,8 +187,8 @@ for (ITestNGMethod method : skippedMethods) {
     class ColoredDotFileGenerator extends DefaultDotFileGenerator {
 
         ColoredDotFileGenerator() {
-            this.cssFailedMethod = " [color=red,style=filled];";
-            this.cssSkippedMethod = " [color=yellow,style=filled];";
+            this.cssFailedMethod = "color=red,style=filled";
+            this.cssSkippedMethod = "color=yellow,style=filled";
             this.cssFailedGroup = " [shape=box,peripheries=2,color=red,style=filled];";
             this.cssSkippedGroup = " [shape=box,peripheries=2,color=yellow,style=filled];";
         }
@@ -180,61 +213,91 @@ for (ITestNGMethod method : skippedMethods) {
             try {
                 out = new OutputStreamWriter(new FileOutputStream(dotFile));
                 out.write("digraph testDependencies {" + NEWLINE);
+                String failedConfigMethod = "";
+                if (!failedConfigurations.isEmpty()) {
+                    out.write("compound=true;" + NEWLINE); // otherwise lhead will not work
+                    out.write(NEWLINE + "subgraph clusterFailedConfigs {" + NEWLINE);
+                    out.write("label = \"Failed Configuration Methods\"" + NEWLINE);
+                    //out.write("failedConfig;" + NEWLINE);
+                    // TODO extract CSS
+                    // FIXME does not work - expected border around failedConfigs cluster
+                    out.write("color=blue;" + NEWLINE);
+                    //out.write("node [color=white];" + NEWLINE);
+                    for (ITestNGMethod failedConfig : failedConfigurations) {
+                        out.write(getClassAndMethodString(failedConfig) + " [label=\"" + failedConfig.getMethodName() + "\"];" + NEWLINE);
+                        failedConfigMethod = getClassAndMethodString(failedConfig);
+                    }
+                    out.write("}" + NEWLINE+NEWLINE);
 
-if (!failedConfigurations.isEmpty()) {
-    out.write("subgraph clusterFailedConfigs {" + NEWLINE);
-    out.write("label = \"Failed Configuration Methods\"" + NEWLINE);
-    // TODO extract CSS
-    // FIXME does not work - expected border around failedConfigs cluster
-    out.write("color=blue;" + NEWLINE);
-    //out.write("node [color=white];" + NEWLINE);
-    for (ITestNGMethod failedConfig : failedConfigurations) {
-        String className = failedConfig.getTestClass().getName();
-        className = className.substring(className.lastIndexOf("."));
-        out.write(className + "_" + failedConfig.getMethodName() + ";" + NEWLINE);
-    }
-    out.write("}" + NEWLINE);
-
-}
+                }
                 out.write("  rankdir=BT;" + NEWLINE);
 
                 for (ITestNGMethod failedMethod : failedMethods) {
                     //log("failed method: " + failedMethod.getMethodName());
-                    out.write(failedMethod.getMethodName() + cssFailedMethod + NEWLINE);
+                    out.write(getClassAndMethodString(failedMethod) + "[label=\"" + failedMethod.getMethodName() + "\"," + cssFailedMethod + "];"+ NEWLINE);
+                    for (String depMethod : failedMethod.getMethodsDependedUpon()) {
+                        out.write(getClassAndMethodString(failedMethod) + DEPENDS_UPON + getClassAndMethodString(depMethod) + NEWLINE);
+                                    }
                 }
                 for (ITestNGMethod skippedMethod : skippedMethods) {
                     //log("skipped method: " + skippedMethod.getMethodName());
-                    out.write(skippedMethod.getMethodName() + " " + cssSkippedMethod + NEWLINE);
+                    out.write(getClassAndMethodString(skippedMethod) + "[label=\"" + skippedMethod.getMethodName() + "\"," + cssSkippedMethod + "];"+ NEWLINE);
+                    if (skippedMethod.getMethodsDependedUpon().length > 0) {
+                        for (String depMethod : skippedMethod.getMethodsDependedUpon()) {
+                            out.write(getClassAndMethodString(skippedMethod) + DEPENDS_UPON + getClassAndMethodString(depMethod) + NEWLINE);
+                        }
+                    }
+                    else {
+                        if (skippedMethod.getGroupsDependedUpon().length > 0) {
+                        for (String depGroup : skippedMethod.getGroupsDependedUpon()) {
+                            out.write(getClassAndMethodString(skippedMethod) + DEPENDS_UPON + "Group_" + depGroup + NEWLINE);
+                        }
+
+                    }
+                        else {
+                        out.write(getClassAndMethodString(skippedMethod) + DEPENDS_UPON + failedConfigMethod + NEWLINE);
+                        }
+                    }
                 }
 
+/**
                 // let us gather all groups that are
                 for (TestMethod method : methods) {
 
-                    // draw dependency edges: method to method
-                    for (String dependedUponMethod : method.getMethodsDepUpon()) {
-                        out.write(method.getName() + DEPENDS_UPON + dependedUponMethod + NEWLINE);
-                    }
+                    //log(method.getName() + " no groups: " + method.getGroupsDepUpon().isEmpty());
+                    //log(method.getName() + " no methods: " + method.getMethodsDepUpon().isEmpty());
+
+                    //if (method.getGroupsDepUpon().isEmpty() && method.getMethodsDepUpon().isEmpty()) {
+                    //    out.write(method.getName() + DEPENDS_UPON + "failedConfig" + NEWLINE);
+                    //}
+
+
+//                    // draw dependency edges: method to method
+//                    for (String dependedUponMethod : method.getMethodsDepUpon()) {
+//                        out.write(method.getName() + DEPENDS_UPON + dependedUponMethod + NEWLINE);
+//                    }
 
                     // draw dependency edges: method to group
                     for (String dependedUponGroup : method.getGroupsDepUpon()) {
                         out.write(method.getName() + DEPENDS_UPON + dependedUponGroup + NEWLINE);
                     }
                 }
+                */
 
                 // draw group nodes
                 for (String group : uniqueGroups) {
                     // failed - red
                     if (failedGroups.contains(group)) {
-                        out.write(group + cssFailedGroup + NEWLINE);
+                        out.write(getGroupName(group) + cssFailedGroup + NEWLINE);
                     }
                     // skipped - yello
                     // FIXME to be removed? there is no such thing as skipped group
                     else if (skippedGroups.contains(group)) {
-                        out.write(group + cssSkippedGroup + NEWLINE);
+                        out.write(getGroupName(group) + cssSkippedGroup + NEWLINE);
                     }
                     // normal groups
                     else {
-                        out.write(group + cssGroup + NEWLINE);
+                        out.write(getGroupName(group) + cssGroup + NEWLINE);
                     }
                 }
 
@@ -242,7 +305,7 @@ if (!failedConfigurations.isEmpty()) {
                 if (!uniqueGroups.isEmpty()) {
                     out.write("{ rank = same;");
                     for (String group : uniqueGroups) {
-                        out.write(" \"" + group + "\"; ");
+                        out.write(" \"Group_" + group + "\"; ");
                     }
                 }
                 out.write("}" + NEWLINE);
@@ -288,11 +351,29 @@ if (!failedConfigurations.isEmpty()) {
             }
             return dotFile;
         }
+
+        private String getGroupName(String group) {
+            return "Group_" + group;
+        }
     }
 
+
+
+        public static String getClassAndMethodString(ITestNGMethod method) {
+            return method.getRealClass().getSimpleName() + "_" + method.getMethodName();
+        }
+
+
+
+        public static String getClassAndMethodString(String depMethod) {
+            String methodName = depMethod.substring(depMethod.lastIndexOf(".") + 1);
+            depMethod = depMethod.substring(0, depMethod.lastIndexOf("."));
+            String className = depMethod.substring(depMethod.lastIndexOf(".") + 1);
+            return className + "_" + methodName;
+        }
     private void log(String msg) {
         System.out.println(msg);
-        System.err.println(msg);
+        //System.err.println(msg);
         //log.warn(msg);
     }
 
@@ -336,14 +417,12 @@ if (!failedConfigurations.isEmpty()) {
 
         private final String name;
 
-        //private final String state;
 
         private final Set<String> methodsDepUpon = new HashSet<String>();
         private final Set<String> groupsDepUpon = new HashSet<String>();
 
-        public TestMethod(String name, String state) {
+        public TestMethod(String name) {
             this.name = name;
-            //this.state = state;
         }
 
         public String getName() {
