@@ -63,7 +63,8 @@ b) configure surefire plugin (there is lot of incostency in surefire, e.g. docum
         </configuration>
       </plugin>
 
-
+c) if you want to have diagram generate WITHOUT running tests, replace surefire configuration with the following:
+TODO
 
 -----
 FIXME
@@ -75,17 +76,15 @@ FIXME
 TODO
 ----
   
-  * if configuration method fails (e.g. @BeforeClass) then it should be shown that configuration is a culprit; right now test is skipped and you don't know why
-    * it is not possible to point exactly to the right failed config method - at least show all failed config methods and add dependency on cluster
   * should be configured:
     * only methods or class_method (can not use .)
     * classes in subgraphs or not
+    * how? - report.properties on classpath?
   * be able to generate dependencies graph without running tests (but of cours no failed/skipped info then!)
     * done, but need it to be configurable (right now you can do it programmaticaly only)
   * better layout of groups and methods
   * methods of one class should be printed in cluster
   * show why group failed (which methods went red within this group)
-  * add configuration (report.properties on classpath?)
   * various detail levels (e.g. only test methods depended-upon/depending, all methods etc.
 
 ---------
@@ -95,3 +94,17 @@ CHANGELOG
 * since 2011-02-14
   * changed output dir: dot file and png is generated in TestNG default output
   * possible to draw diagram of test dependencies without running tests
+  * works for FQN, not only for method names, so now both are working as expected:
+    // will be skipped because depends on failed method
+    @Test(dependsOnMethods = "pl.kaczanowscy.tomek.testng.reporter.tests.complex.TestA.failure")
+    public void skipped() {
+        assert true;
+    }
+
+    // will be skipped because depends on skipped method
+    @Test(dependsOnMethods = "skipped")
+    public void alsoSkipped() {
+        assert false;
+    }
+  * if configuration method fails (e.g. @BeforeClass) then it is shown that configuration is a culprit
+    * it is not possible to point exactly to the right failed config method - diagram shows all failed config methods and adds dependency on cluster
